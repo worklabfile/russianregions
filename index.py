@@ -9,121 +9,85 @@ HTML_TEMPLATE = '''
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Поиск вакансий на hh.ru</title>
+    <title>Поиск компаний на hh.ru</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 40px; }
         form { margin-bottom: 30px; }
-        .vacancy { border-bottom: 1px solid #ccc; padding: 10px 0; }
-        .vacancy:last-child { border-bottom: none; }
-        .salary { color: #2a7a2a; }
+        .company { border-bottom: 1px solid #ccc; padding: 10px 0; }
+        .company:last-child { border-bottom: none; }
+        .count { color: #2a7a2a; }
     </style>
 </head>
 <body>
-    <h1>Поиск вакансий на hh.ru</h1>
+    <h1>Поиск компаний на hh.ru</h1>
     <form method="post">
-        <input type="text" name="keyword" placeholder="Ключевое слово (например, Python разработчик)" value="{{ keyword|default('') }}" required>
+        <input type="text" name="keyword" placeholder="Ключевое слово (например, Python)" value="{{ keyword|default('') }}">
+        <input type="text" name="area" placeholder="ID региона (например, 1 — Москва)" value="{{ area|default('') }}">
         <button type="submit">Поиск</button>
     </form>
-    {% if vacancies is not none %}
-        {% if vacancies %}
-            <h2>Найдено {{ vacancies|length }} вакансий по запросу '{{ keyword }}':</h2>
-            {% for vacancy in vacancies %}
-                <div class="vacancy">
-                    <strong>Название:</strong> {{ vacancy.title }}<br>
-                    <strong>Компания:</strong> {{ vacancy.company }}<br>
-                    <strong>Город:</strong> {{ vacancy.city }}<br>
-                    <strong>Зарплата:</strong> <span class="salary">{{ vacancy.salary_str }}</span><br>
-                    <strong>Телефон:</strong> {{ vacancy.phone or 'Не указан' }}<br>
-                    <a href="{{ vacancy.url }}" target="_blank">Ссылка</a>
+    {% if companies is not none %}
+        <h2>Компании с более чем 5 активными вакансиями:</h2>
+        <p>Всего найдено компаний: <strong>{{ total }}</strong></p>
+        {% if companies %}
+            {% for company in companies %}
+                <div class="company">
+                    <strong>Компания:</strong> <a href="{{ company.url }}" target="_blank">{{ company.name }}</a><br>
+                    <strong>Активных вакансий:</strong> <span class="count">{{ company.open_vacancies }}</span><br>
                 </div>
             {% endfor %}
         {% else %}
-            <p>Вакансий по запросу '{{ keyword }}' не найдено.</p>
+            <p>Компаний с более чем 5 активными вакансиями не найдено.</p>
         {% endif %}
     {% endif %}
 </body>
 </html>
 '''
 
-def get_vacancy_phone(vacancy_id):
-    url = f"https://api.hh.ru/vacancies/{vacancy_id}"
+def search_companies(keyword='', area=None, min_vacancies=5, per_page=100, max_pages=20):
+    url = "https://api.hh.ru/employers"
     headers = {"User-Agent": "api-test-agent"}
-    try:
-        resp = requests.get(url, headers=headers)
-        resp.raise_for_status()
-        data = resp.json()
-        contacts = data.get("contacts")
-        if contacts and "phones" in contacts and contacts["phones"]:
-            phone = contacts["phones"][0]
-            phone_str = phone.get("formatted", "")
-            if not phone_str:
-                # Формируем вручную, если нет formatted
-                country = phone.get("country", "")
-                city = phone.get("city", "")
-                number = phone.get("number", "")
-                ext = phone.get("ext")
-                phone_str = f"+{country} ({city}) {number}"
-                if ext:
-                    phone_str += f" доб. {ext}"
-            return phone_str
-    except Exception:
-        pass
-    return None
-
-def search_vacancies(keyword, area=1, per_page=100):
-    url = "https://api.hh.ru/vacancies"
-    headers = {"User-Agent": "api-test-agent"}
-    params = {
-        "text": keyword,
-        "area": area,
-        "per_page": per_page
-    }
-    try:
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()
-        data = response.json()
-        vacancies = data.get("items", [])
-        result = []
-        for vacancy in vacancies:
-            salary = vacancy.get("salary", None)
-            salary_str = "Не указана"
-            if salary:
-                salary_from = salary.get("from")
-                salary_to = salary.get("to")
-                currency = salary.get("currency")
-                salary_parts = []
-                if salary_from:
-                    salary_parts.append(f"от {salary_from}")
-                if salary_to:
-                    salary_parts.append(f"до {salary_to}")
-                if currency:
-                    salary_parts.append(currency)
-                salary_str = " ".join(str(part) for part in salary_parts)
-            phone = get_vacancy_phone(vacancy.get("id"))
-            vacancy_info = {
-                "title": vacancy.get("name", ""),
-                "company": vacancy.get("employer", {}).get("name", ""),
-                "city": vacancy.get("area", {}).get("name", ""),
-                "salary": salary,
-                "salary_str": salary_str,
-                "url": vacancy.get("alternate_url", ""),
-                "phone": phone
-            }
-            result.append(vacancy_info)
-        return result
-    except requests.exceptions.RequestException as e:
-        print(f"Ошибка при получении вакансий: {e}")
-        return []
+    result = []
+    for page in range(max_pages):
+        params = {
+            "text": keyword,
+            "per_page": per_page,
+            "page": page,
+            "only_with_vacancies": True
+        }
+        if area:
+            params["area"] = area
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            employers = data.get("items", [])
+            for emp in employers:
+                open_vacancies = emp.get("open_vacancies", 0)
+                if open_vacancies > min_vacancies:
+                    result.append({
+                        "name": emp.get("name", ""),
+                        "open_vacancies": open_vacancies,
+                        "url": emp.get("alternate_url", "")
+                    })
+            if not employers:
+                break
+        except requests.exceptions.RequestException as e:
+            print(f"Ошибка при получении компаний: {e}")
+            break
+    return result
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    vacancies = None
+    companies = None
     keyword = ''
+    area = ''
+    total = 0
     if request.method == 'POST':
         keyword = request.form.get('keyword', '').strip()
-        if keyword:
-            vacancies = search_vacancies(keyword)
-    return render_template_string(HTML_TEMPLATE, vacancies=vacancies, keyword=keyword)
+        area = request.form.get('area', '').strip()
+        companies = search_companies(keyword=keyword, area=area if area else None)
+        total = len(companies) if companies else 0
+    return render_template_string(HTML_TEMPLATE, companies=companies, keyword=keyword, area=area, total=total)
 
 if __name__ == "__main__":
     app.run(debug=True)
