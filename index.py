@@ -65,9 +65,6 @@ HTML_TEMPLATE = '''
     <h1>Поиск компаний на hh.ru</h1>
     <form method="post" id="search-form">
         <input type="hidden" name="page" value="{{ page }}">
-        <label>Ключевое слово:
-            <input type="text" name="keyword" placeholder="например, Python" value="{{ params.keyword|default('') }}">
-        </label>
         <label>Регион:
             <select name="area">
                 <option value="">Любой</option>
@@ -76,15 +73,6 @@ HTML_TEMPLATE = '''
                 {% endfor %}
             </select>
             <span style="font-size: 12px; color: #888;">или введите ID: <input type="text" name="area_manual" value="{{ params.area_manual|default('') }}" style="width:60px"></span>
-        </label>
-        <label>Отрасль:
-            <select name="industry">
-                <option value="">Любая</option>
-                {% for ind in industry_options %}
-                    <option value="{{ ind.id }}" {% if params.industry==ind.id %}selected{% endif %}>{{ ind.name }}</option>
-                {% endfor %}
-            </select>
-            <span style="font-size: 12px; color: #888;">или введите ID: <input type="text" name="industry_manual" value="{{ params.industry_manual|default('') }}" style="width:60px"></span>
         </label>
         <button type="submit">Поиск</button>
     </form>
@@ -138,7 +126,7 @@ def search_companies(params, per_page=50, max_api_pages=10):
     # Определяем, какой industry использовать
     industry_val = params.get("industry_manual").strip() if params.get("industry_manual") else params.get("industry")
     while api_page < max_api_pages and len(result) < per_page:
-        query = {"per_page": 50, "page": api_page, "only_with_vacancies": True}
+        query = {"per_page": 50, "page": api_page, "only_with_vacancies": True, "sort_by": "by_vacancies_open"}
         if params.get("keyword"): query["text"] = params["keyword"]
         area_val = params.get("area_manual") or params.get("area")
         if area_val: query["area"] = area_val
