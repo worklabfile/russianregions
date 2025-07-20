@@ -50,16 +50,18 @@ HTML_TEMPLATE = '''
         .container {
             max-width: 900px;
             margin: 40px auto;
-            background: #2c3136;
-            border-radius: 18px;
-            box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+            background: #262a2e;
+            border-radius: 14px;
+            box-shadow: 0 2px 12px rgba(33,150,243,0.07);
             padding: 36px 28px 28px 28px;
+            border: 1.5px solid #2a7a2a22;
         }
         h1 {
             text-align: center;
             color: #2196f3;
             margin-bottom: 32px;
             letter-spacing: 1px;
+            font-weight: 600;
         }
         form {
             display: flex;
@@ -68,9 +70,10 @@ HTML_TEMPLATE = '''
             align-items: flex-end;
             margin-bottom: 32px;
             background: #23272b;
-            border-radius: 12px;
+            border-radius: 10px;
             padding: 24px 16px 8px 16px;
-            box-shadow: 0 2px 8px rgba(33,150,243,0.08);
+            box-shadow: 0 1px 4px rgba(33,150,243,0.04);
+            border: 1px solid #2a7a2a22;
         }
         label {
             flex: 1 1 250px;
@@ -94,7 +97,7 @@ HTML_TEMPLATE = '''
             outline: none;
         }
         button[type=submit] {
-            background: linear-gradient(90deg, #2196f3 60%, #1976d2 100%);
+            background: #2196f3;
             color: #fff;
             border: none;
             border-radius: 8px;
@@ -102,69 +105,120 @@ HTML_TEMPLATE = '''
             font-size: 18px;
             font-weight: 600;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(33,150,243,0.12);
+            box-shadow: 0 1px 4px rgba(33,150,243,0.10);
             transition: background 0.2s, box-shadow 0.2s;
         }
         button[type=submit]:hover {
-            background: linear-gradient(90deg, #1976d2 60%, #2196f3 100%);
-            box-shadow: 0 4px 16px rgba(33,150,243,0.18);
+            background: #1976d2;
+            box-shadow: 0 2px 8px rgba(33,150,243,0.13);
         }
         .company {
             background: #23272b;
-            border-radius: 14px;
-            box-shadow: 0 1px 8px rgba(33,150,243,0.08);
-            padding: 22px 24px 18px 24px;
+            border-radius: 10px;
+            box-shadow: 0 1.5px 8px rgba(33,150,243,0.07);
+            padding: 24px 24px 18px 24px;
             margin-bottom: 22px;
             display: flex;
             gap: 20px;
             align-items: flex-start;
-            border-left: 5px solid #2196f3;
+            border-left: 4px solid #2196f3;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.13s cubic-bezier(.4,1.3,.6,1), box-shadow 0.13s, background 0.13s;
+            border: 1px solid #2a7a2a22;
         }
-        .company:last-child {
-            margin-bottom: 0;
+        .company:hover {
+            transform: scale(1.012) translateY(-1px);
+            box-shadow: 0 4px 18px 0 #2196f355, 0 2px 8px rgba(33,150,243,0.10);
+            background: #262a2e;
         }
-        .avatar {
+        .avatar, .favicon {
             width: 54px;
             height: 54px;
             border-radius: 10px;
-            background: #2196f3;
+            background: #232c3b;
             color: #fff;
             font-size: 2.1rem;
             font-weight: bold;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 8px rgba(33,150,243,0.18);
+            box-shadow: 0 1px 4px rgba(33,150,243,0.10);
             flex-shrink: 0;
+            letter-spacing: 1px;
+            overflow: hidden;
+        }
+        .favicon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 10px;
+            background: #fff;
         }
         .company-info {
             flex: 1 1 auto;
+            min-width: 0;
         }
         .company-title {
-            font-size: 1.25rem;
+            font-size: 1.18rem;
             font-weight: 600;
             color: #fff;
             margin-bottom: 4px;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
         }
         .company-link {
-            color: #90caf9;
+            color: #2196f3;
             text-decoration: none;
-            font-size: 1.05rem;
+            font-size: 1.01rem;
+            font-weight: 500;
         }
         .company-link:hover {
             text-decoration: underline;
         }
         .company-details {
-            margin: 8px 0 0 0;
-            font-size: 1rem;
+            margin: 10px 0 0 0;
+            font-size: 1.01rem;
             color: #bfc9d1;
+            line-height: 1.7;
         }
         .company-details strong {
             color: #fff;
         }
-        .count {
-            color: #2196f3;
-            font-weight: bold;
+        .count-badge {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            background: #2196f3;
+            color: #fff;
+            font-size: 1.13rem;
+            font-weight: 700;
+            border-radius: 8px;
+            padding: 8px 18px 8px 14px;
+            box-shadow: 0 1px 4px #2196f355;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            z-index: 2;
+            letter-spacing: 1px;
+        }
+        .count-badge svg {
+            width: 18px;
+            height: 18px;
+            fill: #fff;
+        }
+        .desc-block {
+            border: 1.5px solid #2196f3;
+            border-radius: 8px;
+            background: #232c3b;
+            color: #e3f2fd;
+            padding: 10px 14px;
+            margin: 12px 0 0 0;
+            font-size: 1.01rem;
+            line-height: 1.7;
+            font-weight: 400;
+            box-shadow: 0 1px 4px #2196f355;
         }
         .warn {
             color: #ff5252;
@@ -204,7 +258,8 @@ HTML_TEMPLATE = '''
             label { font-size: 15px; }
             button[type=submit] { width: 100%; }
             .company { flex-direction: column; gap: 10px; }
-            .avatar { margin-bottom: 8px; }
+            .avatar, .favicon { margin-bottom: 8px; }
+            .count-badge { position: static; margin-bottom: 10px; }
         }
         .timezone-info {
             margin-top: 10px;
@@ -216,6 +271,12 @@ HTML_TEMPLATE = '''
             display: inline-block;
             border: 1.5px solid #2196f3;
         }
+        .region-diff {
+            color: #90caf9;
+            font-size: 1.01rem;
+            margin-top: 2px;
+            margin-bottom: 8px;
+        }
     </style>
     <script>
     // Карта регионов к часовым зонам (id региона -> инфо)
@@ -225,6 +286,15 @@ HTML_TEMPLATE = '''
         '2': {zone: 2, desc: 'МСК (UTC+3)', info: 'г. Санкт-Петербург', diff: 0},
         // ... остальные регионы ...
     };
+    function getRegionDiff(areaName) {
+        for (const key in REGION_TIMEZONES) {
+            if (REGION_TIMEZONES[key].info === areaName || areaName.includes(REGION_TIMEZONES[key].info)) {
+                const diff = REGION_TIMEZONES[key].diff;
+                return (diff > 0 ? '+' : (diff < 0 ? diff : '')) + (diff !== 0 ? diff : '0');
+            }
+        }
+        return null;
+    }
     function showTimezoneInfo() {
         var select = document.getElementsByName('area')[0];
         var tzDiv = document.getElementById('tz-info');
@@ -232,8 +302,8 @@ HTML_TEMPLATE = '''
         var val = select.value;
         if (REGION_TIMEZONES[val]) {
             var z = REGION_TIMEZONES[val];
-            let diffStr = (z.diff > 0 ? '+' : (z.diff < 0 ? z.diff : '')) + (z.diff !== 0 ? z.diff : '');
-            tzDiv.innerHTML = `<b>Часовая зона:</b> ${z.zone} (${z.desc})<br><span>${z.info}</span><br><b>Разница с Москвой:</b> ${diffStr ? diffStr : '0'} ч.`;
+            let diffStr = (z.diff > 0 ? '+' : (z.diff < 0 ? z.diff : '')) + (z.diff !== 0 ? z.diff : '0');
+            tzDiv.innerHTML = `<b>Часовая зона:</b> ${z.zone} (${z.desc})<br><span>${z.info}</span><br><b>Разница с Москвой:</b> ${diffStr} ч.`;
             tzDiv.style.display = 'block';
         } else {
             tzDiv.innerHTML = '';
@@ -246,6 +316,16 @@ HTML_TEMPLATE = '''
             select.addEventListener('change', showTimezoneInfo);
             showTimezoneInfo();
         }
+        // Сделать карточки кликабельными
+        document.querySelectorAll('.company').forEach(function(card) {
+            card.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') return;
+                var link = card.querySelector('.company-link');
+                if (link) {
+                    window.open(link.href, '_blank');
+                }
+            });
+        });
     });
     function goToPage(page) {
         var form = document.getElementById('search-form');
@@ -278,20 +358,46 @@ HTML_TEMPLATE = '''
             <h2 style="color:#90caf9;">Компании, найдено всего: <strong>{{ total }}</strong></h2>
             <p style="color:#bfc9d1;">Показано компаний: <strong>{{ companies|length }}</strong>{% if total > 2000 %} <span class="warn">(отображается только часть из-за ограничений API hh.ru)</span>{% endif %}</p>
             {% for company in companies %}
-                <div class="company">
-                    <div class="avatar">{{ company.name[0]|upper }}</div>
+                <div class="company" tabindex="0">
+                    {% if company.site_url %}
+                        <div class="favicon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url={{ company.site_url }}" alt="favicon"></div>
+                    {% else %}
+                        <div class="avatar">{{ company.name[0]|upper }}</div>
+                    {% endif %}
+                    <div class="count-badge" title="Активных вакансий">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        {{ company.open_vacancies }}
+                    </div>
                     <div class="company-info">
                         <div class="company-title">{{ company.name }}</div>
                         <a class="company-link" href="{{ company.url }}" target="_blank">Профиль на hh.ru</a>
+                        {% if company.area %}
+                        <div class="region-diff">
+                            <strong>Регион:</strong> {{ company.area }}
+                            {% set diff = None %}
+                            {% for key, val in REGION_TIMEZONES.items() %}
+                                {% if val.info == company.area or company.area in val.info %}
+                                    {% set diff = val.diff %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if diff is not none %}
+                                &nbsp;|&nbsp;<span>Разница с Москвой: <b>{{ "+" if diff > 0 else (diff if diff < 0 else "") }}{{ diff if diff != 0 else "0" }} ч.</b></span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
                         <div class="company-details">
-                            <strong>Активных вакансий:</strong> <span class="count">{{ company.open_vacancies }}</span><br>
-                            {% if company.area %}<strong>Регион:</strong> {{ company.area }}<br>{% endif %}
-                            {% if company.site_url %}<strong>Сайт:</strong> <a href="{{ company.site_url }}" style="color:#90caf9;" target="_blank">{{ company.site_url }}</a><br>{% endif %}
+                            {% if company.site_url %}<strong>Сайт:</strong> <a href="{{ company.site_url }}" style="color:#2196f3;" target="_blank">{{ company.site_url }}</a><br>{% endif %}
                             {% if company.type %}<strong>Тип:</strong> {{ company.type }}<br>{% endif %}
                             {% if company.founded %}<strong>Год основания:</strong> {{ company.founded }}<br>{% endif %}
-                            {% if company.description %}<strong>Описание:</strong> {{ company.description|safe }}<br>{% endif %}
-                            {% if company.vacancies_url %}<strong>Вакансии:</strong> <a href="{{ company.vacancies_url }}" style="color:#90caf9;" target="_blank">Смотреть</a><br>{% endif %}
+                            {% if company.vacancies_url %}<strong>Вакансии:</strong> <a href="{{ company.url }}" class="company-link" target="_blank">Смотреть</a><br>{% endif %}
                         </div>
+                        {% if company.description %}
+                        <div class="desc-block">
+                            {% set desc = company.description|safe %}
+                            {% set paragraphs = desc.split('</p>') if '</p>' in desc else desc.split('\n\n') %}
+                            {% for p in paragraphs[:2] %}{{ p|safe }}{% if '</p>' in desc %}</p>{% else %}<br><br>{% endif %}{% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             {% endfor %}
@@ -406,6 +512,13 @@ def index():
     page = 1
     per_page = 100
     total_pages = 1
+    # Карта регионов для шаблона (должна совпадать с JS)
+    REGION_TIMEZONES = {
+        '40': {'zone': 1, 'desc': 'МСК-1 (UTC+2)', 'info': 'Калининградская область', 'diff': -1},
+        '1': {'zone': 2, 'desc': 'МСК (UTC+3)', 'info': 'г. Москва', 'diff': 0},
+        '2': {'zone': 2, 'desc': 'МСК (UTC+3)', 'info': 'г. Санкт-Петербург', 'diff': 0},
+        # ... остальные регионы ...
+    }
     if request.method == 'POST':
         params["keyword"] = request.form.get('keyword', '').strip()
         params["area"] = request.form.get('area', '').strip()
@@ -419,7 +532,7 @@ def index():
         params["page"] = page
         companies, total = search_companies(params, per_page=per_page)
         total_pages = math.ceil(total / per_page) if total else 1
-    return render_template_string(HTML_TEMPLATE, companies=companies, total=total, params=params, area_options=AREA_OPTIONS, industry_options=INDUSTRY_OPTIONS, page=page, total_pages=total_pages)
+    return render_template_string(HTML_TEMPLATE, companies=companies, total=total, params=params, area_options=AREA_OPTIONS, industry_options=INDUSTRY_OPTIONS, page=page, total_pages=total_pages, REGION_TIMEZONES=REGION_TIMEZONES)
 
 if __name__ == "__main__":
     app.run(debug=True)
