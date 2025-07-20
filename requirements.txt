@@ -1,2 +1,4 @@
-requests
-Flask 
+fastapi
+jinja2
+httpx
+uvicorn 

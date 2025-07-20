@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Поиск компаний на hh.ru</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ... (оставить CSS и JS как в исходном шаблоне) ... -->
+    {{ super() }}
+</head>
+<body>
+    <div class="container">
+    <h1>Поиск компаний на hh.ru</h1>
+    <form method="post" id="search-form">
+        <input type="hidden" name="page" value="{{ page }}">
+        <label>Регион:
+            <select name="area">
+                <option value="">Любой</option>
+                {% for area in area_options %}
+                    <option value="{{ area.id }}" {% if params.area==area.id %}selected{% endif %}>{{ area.name }}</option>
+                {% endfor %}
+            </select>
+            <span style="font-size: 12px; color: #888;">или введите ID: <input type="text" name="area_manual" value="{{ params.area_manual|default('') }}" style="width:60px"></span>
+        </label>
+        <button type="submit">Поиск</button>
+    </form>
+    <div id="tz-info" class="timezone-info" style="display:none;"></div>
+    {% if companies is not none %}
+        {% if companies|length > 0 %}
+            <h2 style="color:#90caf9;">Компании, найдено всего: <strong>{{ total }}</strong></h2>
+            <p style="color:#bfc9d1;">Показано компаний: <strong>{{ companies|length }}</strong>{% if total > 2000 %} <span class="warn">(отображается только часть из-за ограничений API hh.ru)</span>{% endif %}</p>
+            {% for company in companies %}
+                <div class="company" tabindex="0">
+                    {% if company.site_url %}
+                        <div class="favicon"><img src="https://www.google.com/s2/favicons?sz=64&domain_url={{ company.site_url }}" alt="favicon"></div>
+                    {% else %}
+                        <div class="avatar">{{ company.name[0]|upper }}</div>
+                    {% endif %}
+                    <div class="count-badge" title="Активных вакансий">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        {{ company.open_vacancies }}
+                    </div>
+                    <div class="company-info">
+                        <div class="company-title">{{ company.name }}</div>
+                        <a class="company-link" href="{{ company.url }}" target="_blank">Профиль на hh.ru</a>
+                        {% if company.area %}
+                        <div class="region-diff">
+                            <strong>Регион:</strong> {{ company.area }}
+                            {% set diff = None %}
+                            {% for key, val in REGION_TIMEZONES.items() %}
+                                {% if val.info == company.area or company.area in val.info %}
+                                    {% set diff = val.diff %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if diff is not none %}
+                                &nbsp;|&nbsp;<span>Разница с Москвой: <b>{{ "+" if diff > 0 else (diff if diff < 0 else "") }}{{ diff if diff != 0 else "0" }} ч.</b></span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        <div class="company-details">
+                            {% if company.site_url %}<strong>Сайт:</strong> <a href="{{ company.site_url }}" style="color:#2196f3;" target="_blank">{{ company.site_url }}</a><br>{% endif %}
+                            {% if company.type %}<strong>Тип:</strong> {{ company.type }}<br>{% endif %}
+                            {% if company.founded %}<strong>Год основания:</strong> {{ company.founded }}<br>{% endif %}
+                            {% if company.vacancies_url %}<strong>Вакансии:</strong> <a href="{{ company.url }}" class="company-link" target="_blank">Смотреть</a><br>{% endif %}
+                        </div>
+                        {% if company.description %}
+                        <div class="desc-block">
+                            {% set desc = company.description|safe %}
+                            {% set paragraphs = desc.split('</p>') if '</p>' in desc else desc.split('\n\n') %}
+                            {% for p in paragraphs[:2] %}{{ p|safe }}{% if '</p>' in desc %}</p>{% else %}<br><br>{% endif %}{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="#" onclick="goToPage({{ page-1 }}); return false;">&laquo; Назад</a>
+            {% endif %}
+            {% for p in range(1, total_pages+1) %}
+                {% if p == page %}
+                    <span class="current">{{ p }}</span>
+                {% elif p <= 2 or p > total_pages-2 or (p >= page-2 and p <= page+2) %}
+                    <a href="#" onclick="goToPage({{ p }}); return false;">{{ p }}</a>
+                {% elif p == 3 and page > 5 %}
+                    ...
+                {% elif p == total_pages-2 and page < total_pages-4 %}
+                    ...
+                {% endif %}
+            {% endfor %}
+            {% if page < total_pages %}
+                <a href="#" onclick="goToPage({{ page+1 }}); return false;">Вперёд &raquo;</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endif %}
+    </div>
+</body>
+</html> 
