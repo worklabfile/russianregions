@@ -1,7 +1,9 @@
-from flask import Flask, render_template_string, request
+from flask import Flask, render_template_string, request, Response
 import requests
 import json
 import math
+import csv
+import io
 
 # Загрузка регионов и отраслей из файлов
 with open('areas.json', encoding='utf-8') as f:
@@ -10,7 +12,6 @@ with open('industries.json', encoding='utf-8') as f:
     INDUSTRIES = json.load(f)
 
 def get_area_options():
-    # Только регионы России (id=113)
     options = []
     russia = next((c for c in AREAS if c['id'] == '113'), None)
     if russia:
@@ -96,7 +97,7 @@ HTML_TEMPLATE = '''
             border: 1.5px solid #2196f3;
             outline: none;
         }
-        button[type=submit] {
+        button[type=submit], .download-btn {
             background: #2196f3;
             color: #fff;
             border: none;
@@ -108,7 +109,7 @@ HTML_TEMPLATE = '''
             box-shadow: 0 1px 4px rgba(33,150,243,0.10);
             transition: background 0.2s, box-shadow 0.2s;
         }
-        button[type=submit]:hover {
+        button[type=submit]:hover, .download-btn:hover {
             background: #1976d2;
             box-shadow: 0 2px 8px rgba(33,150,243,0.13);
         }
@@ -252,11 +253,15 @@ HTML_TEMPLATE = '''
             background: #1976d2;
             color: #fff;
         }
+        .download-section {
+            margin-top: 20px;
+            text-align: center;
+        }
         @media (max-width: 600px) {
             .container { padding: 10px 2px; }
             form { flex-direction: column; gap: 12px; padding: 12px 4px 4px 4px; }
             label { font-size: 15px; }
-            button[type=submit] { width: 100%; }
+            button[type=submit], .download-btn { width: 100%; }
             .company { flex-direction: column; gap: 10px; }
             .avatar, .favicon { margin-bottom: 8px; }
             .count-badge { position: static; margin-bottom: 10px; }
@@ -279,12 +284,10 @@ HTML_TEMPLATE = '''
         }
     </style>
     <script>
-    // Карта регионов к часовым зонам (id региона -> инфо)
     const REGION_TIMEZONES = {
         '40': {zone: 1, desc: 'МСК-1 (UTC+2)', info: 'Калининградская область', diff: -1},
         '1': {zone: 2, desc: 'МСК (UTC+3)', info: 'г. Москва', diff: 0},
         '2': {zone: 2, desc: 'МСК (UTC+3)', info: 'г. Санкт-Петербург', diff: 0},
-        // ... остальные регионы ...
     };
     function getRegionDiff(areaName) {
         for (const key in REGION_TIMEZONES) {
@@ -316,7 +319,6 @@ HTML_TEMPLATE = '''
             select.addEventListener('change', showTimezoneInfo);
             showTimezoneInfo();
         }
-        // Сделать карточки кликабельными
         document.querySelectorAll('.company').forEach(function(card) {
             card.addEventListener('click', function(e) {
                 if (e.target.tagName === 'A') return;
@@ -341,7 +343,9 @@ HTML_TEMPLATE = '''
     <h1>Поиск компаний на hh.ru</h1>
     <form method="post" id="search-form">
         <input type="hidden" name="page" value="{{ page }}">
-        <label>Регион:
+        <label>Реги
+
+он:
             <select name="area">
                 <option value="">Любой</option>
                 {% for area in area_options %}
@@ -365,7 +369,8 @@ HTML_TEMPLATE = '''
                         <div class="avatar">{{ company.name[0]|upper }}</div>
                     {% endif %}
                     <div class="count-badge" title="Активных вакансий">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59- their data as a CSV file
+8Jon: 8 8-8 8s3.59 8 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
                         {{ company.open_vacancies }}
                     </div>
                     <div class="company-info">
@@ -381,7 +386,7 @@ HTML_TEMPLATE = '''
                                 {% endif %}
                             {% endfor %}
                             {% if diff is not none %}
-                                &nbsp;|&nbsp;<span>Разница с Москвой: <b>{{ "+" if diff > 0 else (diff if diff < 0 else "") }}{{ diff if diff != 0 else "0" }} ч.</b></span>
+                                 | <span>Разница с Москвой: <b>{{ "+" if diff > 0 else (diff if diff < 0 else "") }}{{ diff if diff != 0 else "0" }} ч.</b></span>
                             {% endif %}
                         </div>
                         {% endif %}
@@ -389,7 +394,7 @@ HTML_TEMPLATE = '''
                             {% if company.site_url %}<strong>Сайт:</strong> <a href="{{ company.site_url }}" style="color:#2196f3;" target="_blank">{{ company.site_url }}</a><br>{% endif %}
                             {% if company.type %}<strong>Тип:</strong> {{ company.type }}<br>{% endif %}
                             {% if company.founded %}<strong>Год основания:</strong> {{ company.founded }}<br>{% endif %}
-                            {% if company.vacancies_url %}<strong>Вакансии:</strong> <a href="{{ company.url }}" class="company-link" target="_blank">Смотреть</a><br>{% endif %}
+                            {% if company.vacancies_url %}<strong>Вакансии:</strong> <a href="{{ company.vacancies_url }}" class="company-link" target="_blank">Смотреть</a><br>{% endif %}
                         </div>
                         {% if company.description %}
                         <div class="desc-block">
@@ -401,11 +406,22 @@ HTML_TEMPLATE = '''
                     </div>
                 </div>
             {% endfor %}
+            <div class="download-section">
+                <form method="post" action="/download">
+                    <input type="hidden" name="keyword" value="{{ params.keyword }}">
+                    <input type="hidden" name="area" value="{{ params.area }}">
+                    <input type="hidden" name="area_manual" value="{{ params.area_manual }}">
+                    <input type="hidden" name="industry" value="{{ params.industry }}">
+                    <input type="hidden" name="industry_manual" value="{{ params.industry_manual }}">
+                    <input type="hidden" name="page" value="{{ page }}">
+                    <button type="submit" class="download-btn">Скачать в CSV</button>
+                </form>
+            </div>
         {% endif %}
         {% if total_pages > 1 %}
         <div class="pagination">
             {% if page > 1 %}
-                <a href="#" onclick="goToPage({{ page-1 }}); return false;">&laquo; Назад</a>
+                <a href="#" onclick="goToPage({{ page-1 }}); return false;">« Назад</a>
             {% endif %}
             {% for p in range(1, total_pages+1) %}
                 {% if p == page %}
@@ -419,7 +435,7 @@ HTML_TEMPLATE = '''
                 {% endif %}
             {% endfor %}
             {% if page < total_pages %}
-                <a href="#" onclick="goToPage({{ page+1 }}); return false;">Вперёд &raquo;</a>
+                <a href="#" onclick="goToPage({{ page+1 }}); return false;">Вперёд »</a>
             {% endif %}
         </div>
         {% endif %}
@@ -428,8 +444,6 @@ HTML_TEMPLATE = '''
 </body>
 </html>
 '''
-
-# В функции search_companies теперь нужно получать больше информации о компании
 
 def search_companies(params, per_page=100, max_api_pages=20):
     url = "https://api.hh.ru/employers"
@@ -463,7 +477,6 @@ def search_companies(params, per_page=100, max_api_pages=20):
                     filtered_count += 1
                     continue
                 if len(result) < per_page:
-                    # Получаем подробную информацию о компании
                     emp_details = emp.copy()
                     try:
                         details_resp = requests.get(f"https://api.hh.ru/employers/{emp['id']}", headers=headers)
@@ -472,7 +485,6 @@ def search_companies(params, per_page=100, max_api_pages=20):
                             emp_details.update(details)
                     except Exception:
                         pass
-                    # Безопасно извлекаем поля, которые могут быть строкой или словарём
                     area_val = emp_details.get("area")
                     if isinstance(area_val, dict):
                         area_name = area_val.get("name", "")
@@ -512,12 +524,10 @@ def index():
     page = 1
     per_page = 100
     total_pages = 1
-    # Карта регионов для шаблона (должна совпадать с JS)
     REGION_TIMEZONES = {
         '40': {'zone': 1, 'desc': 'МСК-1 (UTC+2)', 'info': 'Калининградская область', 'diff': -1},
         '1': {'zone': 2, 'desc': 'МСК (UTC+3)', 'info': 'г. Москва', 'diff': 0},
         '2': {'zone': 2, 'desc': 'МСК (UTC+3)', 'info': 'г. Санкт-Петербург', 'diff': 0},
-        # ... остальные регионы ...
     }
     if request.method == 'POST':
         params["keyword"] = request.form.get('keyword', '').strip()
@@ -533,6 +543,51 @@ def index():
         companies, total = search_companies(params, per_page=per_page)
         total_pages = math.ceil(total / per_page) if total else 1
     return render_template_string(HTML_TEMPLATE, companies=companies, total=total, params=params, area_options=AREA_OPTIONS, industry_options=INDUSTRY_OPTIONS, page=page, total_pages=total_pages, REGION_TIMEZONES=REGION_TIMEZONES)
+
+@app.route('/download', methods=['POST'])
+def download_csv():
+    params = {
+        "keyword": request.form.get('keyword', '').strip(),
+        "area": request.form.get('area', '').strip(),
+        "area_manual": request.form.get('area_manual', '').strip(),
+        "industry": request.form.get('industry', '').strip(),
+        "industry_manual": request.form.get('industry_manual', '').strip(),
+        "page": int(request.form.get('page', '1'))
+    }
+    companies, _ = search_companies(params, per_page=100)
+    
+    # Create CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
+    
+    # Write headers
+    headers = ["name", "open_vacancies", "url", "area", "site_url", "type", "founded", "vacancies_url"]
+    writer.writerow(headers)
+    
+    # Write company data (excluding description)
+    for company in companies:
+        row = [
+            company.get("name", ""),
+            company.get("open_vacancies", 0),
+            company.get("url", ""),
+            company.get("area", ""),
+            company.get("site_url", ""),
+            company.get("type", ""),
+            company.get("founded", ""),
+            company.get("vacancies_url", "")
+        ]
+        writer.writerow(row)
+    
+    # Prepare response
+    output.seek(0)
+    return Response(
+        output.getvalue(),
+        mimetype='text/csv',
+        headers={
+            'Content-Disposition': 'attachment; filename=companies.csv',
+            'Content-Type': 'text/csv; charset=utf-8'
+        }
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
